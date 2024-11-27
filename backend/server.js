@@ -1,95 +1,51 @@
-import express from "express";
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-import cors from "cors";
-import connectDB from "./config/db.js";
-import morgan from "morgan";
-import colors from "colors";
-import errorHandler from "./middlewares/error.js";
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
+const bodyParser = require('body-parser');
+require('dotenv').config(); // Chargement des variables d'environnement
 
-// Importation des fichiers de routes
-import userRoutes from "./routes/userRoutes.js";
-
-
-// Configuration des variables d'environnement
-dotenv.config();
-
-// Définition des variables
 const app = express();
-const isProduction = process.env.NODE_ENV === "production";
-const port = process.env.PORT || 4000;
 
-// Obtenir le chemin absolu actuel
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Middleware CORS
+app.use(cors({
+    origin: 'https://www.robot-nc.com', // Autoriser uniquement votre frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true, // Si vous utilisez des cookies ou des tokens
+}));
 
-// Connexion à la base de données MongoDB
-connectDB();
+// Middleware supplémentaire
+app.use(morgan('dev')); // Pour les logs des requêtes HTTP
+app.use(bodyParser.json()); // Pour parser les requêtes JSON
+app.use(bodyParser.urlencoded({ extended: true })); // Pour parser les requêtes URL-encoded
 
-// Middleware pour parsing des requêtes JSON et URL-encoded
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Gestion des requêtes pré-volées (OPTIONS)
+app.options('*', cors()); // Répond aux requêtes pré-volées pour toutes les routes
 
-// Configuration des logs pour le mode développement
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
+// Routes de l'application
+const usersRouter = require('./routes/users'); // Exemple pour les utilisateurs
+app.use('/users', usersRouter); // Mount de la route pour /users
 
-// Configuration des fichiers statiques
-app.use("/doc", express.static(path.join(__dirname, "doc")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Configuration CORS
-const allowedOrigins = [
-  "http://localhost:3000", // Local development
-  "https://robot-nc.com/", // Production domain
-  "https://api.robot-nc.com", // Production API subdomain
-];
-
-app.use(
-  cors({
-    credentials: true,
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Autorise les requêtes sans origine (Postman, cURL)
-      if (!allowedOrigins.includes(origin)) {
-        const msg = "CORS bloqué : origine non autorisée.";
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Authorization", "Content-Type", "Accept"],
-  })
-);
-
-// Middleware pour gérer les requêtes OPTIONS (pré-vol)
-app.options("*", cors());
-
-// Route principale pour servir la documentation de l'API
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "doc", "api-doc.html"));
+// Route de test pour vérifier le fonctionnement
+app.get('/', (req, res) => {
+    res.status(200).json({ message: 'API is running!' });
 });
 
-// Montage des routes
-app.use("/users", userRoutes);
-
-
-// Middleware pour gérer les erreurs 404
+// Gestion des erreurs 404
 app.use((req, res, next) => {
-  res.status(404).json({
-    success: false,
-    message: `Route introuvable: ${req.originalUrl}`,
-  });
+    res.status(404).json({ error: 'Route not found' });
 });
 
-// Middleware pour gérer les erreurs globales
-app.use(errorHandler);
-
-// Lancement du serveur
-app.listen(port, () => {
-  console.log(
-    `Serveur en cours d'exécution sur le port ${port} en mode ${isProduction ? "Production".red : "Développement".cyan
-      }`.green.bold
-  );
+// Gestion des erreurs globales
+app.use((err, req, res, next) => {
+    console.error(err.stack); // Log de l'erreur
+    res.status(500).json({ error: 'Internal Server Error' });
 });
+
+// Démarrage du serveur
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+    console.log(`Serveur en cours d'exécution sur le port ${PORT} en mode ${process.env.NODE_ENV || 'development'}`);
+});
+
+module.exports = app;
