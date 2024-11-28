@@ -3,55 +3,54 @@ import cors from 'cors';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import usersRouter from './routes/users.js'; // Import des routes utilisateurs
+import usersRouter from './routes/users.js';
 
-dotenv.config(); // Chargement des variables d'environnement
+dotenv.config();
 
 const app = express();
 
-// Configuration dynamique des CORS
+// Configuration des CORS
 const allowedOrigins = ['https://www.robot-nc.com', 'http://localhost:3000'];
-const corsOptions = {
+app.use(cors({
     origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true); // Origine autorisée
+            callback(null, true); // Autoriser l'origine
         } else {
-            callback(new Error('CORS bloqué : origine non autorisée.'));
+            callback(new Error('Origine non autorisée par CORS'));
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // Autorise les cookies si nécessaires
-};
+    credentials: true, // Permettre l'envoi de cookies
+}));
 
-// Middleware CORS
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Répond aux requêtes pré-volées pour toutes les routes
+// Gestion des requêtes pré-volées OPTIONS
+app.options('*', cors());
 
 // Middleware supplémentaires
-app.use(morgan('dev')); // Logs des requêtes HTTP
-app.use(bodyParser.json()); // Parser les requêtes JSON
-app.use(bodyParser.urlencoded({ extended: true })); // Parser les requêtes URL-encoded
+app.use(morgan('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes de l'application
-app.use('/users', usersRouter); // Routes pour /users
+app.use('/users', usersRouter);
 
 // Route de test
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'API is running!' });
 });
 
-// Gestion des erreurs 404 (Route non trouvée)
+// Gestion des erreurs 404
 app.use((req, res, next) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
 // Gestion des erreurs globales
 app.use((err, req, res, next) => {
-    if (err.message === 'CORS bloqué : origine non autorisée.') {
+    console.error(err.stack);
+    if (err.message === 'Origine non autorisée par CORS') {
         res.status(403).json({ error: err.message });
     } else {
-        console.error(err.stack); // Log de l'erreur
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
