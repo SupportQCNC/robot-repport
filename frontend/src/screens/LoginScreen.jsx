@@ -52,11 +52,11 @@ const LoginScreen = () => {
       <div className="w-full max-w-md bg-gray-800 text-white shadow-xl rounded-lg p-8">
         {/* Logo de la quincaillerie */}
         <div className="flex justify-center mb-6">
-          {/* <img
+          <img
             src={logoImage}
             alt="Quincaillerie Calédonienne"
             className="h-16 w-auto"
-          /> */}
+          />
         </div>
 
         <h2 className="text-center text-lg text-gray-400 mb-8">
