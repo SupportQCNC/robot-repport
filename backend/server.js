@@ -9,6 +9,9 @@ dotenv.config();
 
 const app = express();
 
+console.log('MONGO_URI_PROD:', process.env.MONGO_URI_PROD);
+
+
 // Configuration des CORS
 const allowedOrigins = ['https://www.robot-nc.com', 'http://localhost:3000'];
 app.use(cors({
