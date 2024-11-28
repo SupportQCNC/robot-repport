@@ -3,7 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
-import usersRouter from './routes/users.js';
+import usersRouter from './routes/userRoutes.js';
 
 dotenv.config();
 
